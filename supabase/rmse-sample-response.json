@@ -1,0 +1,32 @@
+{
+  "data": {
+    "success": true,
+    "message": null,
+    "data": [
+      {
+        "url_id": "2ad6ad54-a0b7-466d-b9d0-58914995fd91",
+        "url": "https://www.facebook.com/share/p/ko8knvMZ8z8DyDbQ/",
+        "screenshot_url": null,
+        "webrisk_evaluation": {
+          "scores": [
+            { "threat_type": "UNWANTED_SOFTWARE", "confidence_level": "SAFE" },
+            { "threat_type": "MALWARE", "confidence_level": "SAFE" },
+            { "threat_type": "SOCIAL_ENGINEERING", "confidence_level": "SAFE" }
+          ]
+        }
+      },
+      {
+        "url_id": "ab925761-f7e7-4102-a021-a2d66b9e41fc",
+        "url": "https://www.facebook.com/permalink.php?story_fbid=pfbid02s9UgJLURcNEUvqy8XYe6zC19xDHsf9bxQKRbMj5ofc32U3d6vXsuyk3V1UwiMMgAl&id=61560846322862&rdid=o5USmyfSPNKesvR8&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2Fp%2Fko8knvMZ8z8DyDbQ%2F",
+        "screenshot_url": null,
+        "webrisk_evaluation": {
+          "scores": [
+            { "threat_type": "UNWANTED_SOFTWARE", "confidence_level": "SAFE" },
+            { "threat_type": "MALWARE", "confidence_level": "SAFE" },
+            { "threat_type": "SOCIAL_ENGINEERING", "confidence_level": "SAFE" }
+          ]
+        }
+      }
+    ]
+  }
+}
