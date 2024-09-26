@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
       .from("processed_link")
       .select("*")
       .eq("is_processed", false)
-      .limit(20);
+      .limit(10);
     if (error) {
       console.error(error);
       return getResponse({ error: error.message });
@@ -33,6 +33,8 @@ Deno.serve(async (req) => {
       console.log("Processing: ", elem.url);
       try {
         const response = await fetchRmseResponse(elem.url);
+        await new Promise(r => setTimeout(r, 1000));
+
         const redirects = response.success
           ? response.data?.map((item) => item.url) ?? []
           : [];
