@@ -5,11 +5,11 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js";
+import { RmseResponse } from "./rmse.ts";
 
 Deno.serve(async (req) => {
   const body = await req.json();
-  const url = body["url"];
-  const fromDb = body["from_db"];
+  const { url, from_db } = body;
 
   const authHeader = req.headers.get("Authorization")!;
   const supabase = createClient(
@@ -18,43 +18,73 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: authHeader } } },
   );
 
-  if (fromDb) {
-    const { data } = await supabase
-      .from("process_link")
-      .select("url")
-      .eq("is_processed", false);
-    data?.map(async (url) => {
-    });
-  }
+  if (from_db) {
+    const { data, error } = await supabase
+      .from("processed_link")
+      .select("*")
+      .eq("is_processed", false)
+      .limit(20);
+    if (error) {
+      console.error(error);
+      return getResponse({ error: error.message });
+    }
+    const updatedData = [];
+    for (const elem of data) {
+      console.log("Processing: ", elem.url);
+      try {
+        const response = await fetchRmseResponse(elem.url);
+        const redirects = response.success
+          ? response.data?.map((item) => item.url) ?? []
+          : [];
+        const scores = response.success
+          ? response.data?.[0].webrisk_evaluation.scores ?? []
+          : [];
 
-  if (!url) {
-    return new Response(
-      JSON.stringify({ error: "URL is required" }),
-      { headers: { "Content-Type": "application/json" } },
-    );
-  }
+        updatedData.push({
+          id: elem.id,
+          url: elem.url,
+          is_processed: true,
+          processed_at: new Date().toISOString(),
+          redirects: redirects,
+          risk_scores: scores,
+          report_id: elem.report_id,
+        });
+      } catch (e) {
+        console.error(e);
+        console.log("Failed to process: ", elem.url);
+      }
+    }
 
-  const response = await fetchRmseResponse(url);
-  if (!response.ok) {
-    return new Response(
-      JSON.stringify({ error: "Failed to fetch data" }),
-      { headers: { "Content-Type": "application/json" } },
-    );
-  }
+    if (updatedData.length > 0) {
+      const { error } = await supabase
+        .from("processed_link")
+        .upsert(updatedData);
+      if (error) {
+        console.error(error);
+        return getResponse({ error: error.message });
+      }
+    }
 
-  processRmseResponse(response);
-  return new Response(
-    rmseResponse,
-    { headers: { "Content-Type": "application/json" } },
-  );
+    return getResponse({ success: true });
+  } else if (url) {
+    try {
+      const response = await fetchRmseResponse(url);
+      return getResponse(response);
+    } catch (error) {
+      console.error(error);
+      return getResponse({ error: error.message });
+    }
+  }
+  return getResponse({ error: "Malformed request" });
 });
 
-const processRmseResponse = async (response: Response) => {
-  const res = await response.json();
-  res.data;
-};
+const getResponse = (data: object) =>
+  new Response(
+    JSON.stringify(data),
+    { headers: { "Content-Type": "application/json" } },
+  );
 
-const fetchRmseResponse = async (url: string): Promise<Response> => {
+const fetchRmseResponse = async (url: string): Promise<RmseResponse> => {
   const rmseKey = Deno.env.get("RMSE_API_KEY")!;
   const res = await fetch("https://api.stg.rmse.gasp.gov.sg/evaluate", {
     method: "POST",
@@ -65,6 +95,11 @@ const fetchRmseResponse = async (url: string): Promise<Response> => {
     },
     body: JSON.stringify({ url: url, source: "kaz" }),
   });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data: " + res.statusText);
+  }
+  const data: RmseResponse = await res.json();
+  return data;
 };
 
 /* To invoke locally:
