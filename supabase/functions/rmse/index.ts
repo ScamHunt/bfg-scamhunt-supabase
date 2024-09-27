@@ -33,14 +33,10 @@ Deno.serve(async (req) => {
       console.log("Processing: ", elem.url);
       try {
         const response = await fetchRmseResponse(elem.url);
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1000));
 
-        const redirects = response.success
-          ? response.data?.map((item) => item.url) ?? []
-          : [];
-        const scores = response.success
-          ? response.data?.[0].webrisk_evaluation.scores ?? []
-          : [];
+        const redirects = response.data?.map((item) => item.url) ?? [];
+        const scores = response.data?.[0].webrisk_evaluation.scores ?? [];
 
         updatedData.push({
           id: elem.id,
@@ -97,8 +93,10 @@ const fetchRmseResponse = async (url: string): Promise<RmseResponse> => {
     },
     body: JSON.stringify({ url: url, source: "kaz" }),
   });
-  if (!res.ok) {
-    throw new Error("Failed to fetch data: " + res.statusText);
+  if (res.status !== 400) {
+    throw new Error(
+      `Failed to fetch data with code ${res.status}: ${res.statusText}`,
+    );
   }
   const data: RmseResponse = await res.json();
   return data;

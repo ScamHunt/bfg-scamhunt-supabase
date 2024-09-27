@@ -1,6 +1,6 @@
 export interface RmseResponse {
     success: boolean;
-    message: any;
+    message?: string;
     data?: Data[];
 }
 
